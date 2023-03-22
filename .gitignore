@@ -1,5 +1,6 @@
 *~
 *.sw[op]
+/.direnv
 
 /bazel-bazel-zig-cc
 /bazel-bin

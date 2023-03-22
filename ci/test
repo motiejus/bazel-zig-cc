@@ -13,7 +13,7 @@ cache_prefix="${BAZEL_ZIG_CC_CACHE_PREFIX:-/tmp/bazel-zig-cc}"
 # linux.
 
 echo "--- build a single target with very hermetic sandbox"
-tools/bazel build "$@" \
+bazel build "$@" \
     --experimental_use_hermetic_linux_sandbox \
     --sandbox_writable_path="$cache_prefix" \
     --sandbox_add_mount_pair=/proc \
@@ -21,7 +21,7 @@ tools/bazel build "$@" \
 
 # then test everything else with the standard sandbox
 echo "--- bazel test $* ..."
-tools/bazel test "$@" ...
+bazel test "$@" ...
 
 echo "--- ensure github.com/ziglang/zig/issues/13050 does not regress"
 find "$cache_prefix" \

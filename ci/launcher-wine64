@@ -6,7 +6,7 @@
 set -xeuo pipefail
 
 echo "--- which zig"
-ZIG=${ZIG:-$(tools/bazel run "$@" --run_under=echo @zig_sdk//:zig)}
+ZIG=${ZIG:-$(bazel run "$@" --run_under=echo @zig_sdk//:zig)}
 
 echo "--- test toolchain/launcher.zig via wine64"
 # ReleaseSafe because of https://github.com/ziglang/zig/issues/14036

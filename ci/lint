@@ -23,4 +23,4 @@ tools/buildifier -r -mode check "$PWD"
 >&2 echo -e "OK\n"
 
 >&2 echo "--- Gazelle :goat:"
-tools/bazel run //:gazelle -- -mode diff
+bazel run //:gazelle -- -mode diff
