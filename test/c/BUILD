@@ -3,9 +3,6 @@ load("@bazel-zig-cc//rules:platform.bzl", "platform_binary")
 cc_binary(
     name = "which_libc",
     srcs = ["main.c"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-    ],
 )
 
 [

@@ -253,23 +253,34 @@ fn getTarget(self_exe: []const u8) error{BadParent}!?[]const u8 {
     // having fun.
     var it = mem.split(u8, triple, "-");
 
-    const arch = it.next() orelse return error.BadParent;
-    if (mem.indexOf(u8, "aarch64,x86_64", arch) == null)
+    const got_arch = it.next() orelse return error.BadParent;
+    if (mem.indexOf(u8, "aarch64,x86_64", got_arch) == null)
         return error.BadParent;
 
     const got_os = it.next() orelse return error.BadParent;
     if (mem.indexOf(u8, "linux,macos,windows", got_os) == null)
         return error.BadParent;
 
+    const got_abi = it.next();
     // ABI triple is too much of a moving target
-    if (it.next() == null) return error.BadParent;
+    if (got_abi == null) return error.BadParent;
     // but the target needs to have 3 dashes.
     if (it.next() != null) return error.BadParent;
 
-    if (mem.eql(u8, "c++" ++ EXE, fs.path.basename(self_exe)))
-        return triple
-    else
+    if (!mem.eql(u8, "c++" ++ EXE, fs.path.basename(self_exe)))
         return null;
+
+    // HACK: if OS is macos, then force the ABI triple to "none".
+    if (!mem.eql(u8, got_os, "macos"))
+        return triple;
+
+    if (mem.eql(u8, got_arch, "aarch64"))
+        return "aarch64-macos-none";
+
+    if (mem.eql(u8, got_arch, "x86_64"))
+        return "x86_64-macos-none";
+
+    unreachable;
 }
 
 const testing = std.testing;

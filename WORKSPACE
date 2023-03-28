@@ -44,18 +44,27 @@ gazelle_dependencies(go_repository_default_config = "@//:WORKSPACE")
 
 load(
     "//toolchain:defs.bzl",
+    "macos_sdk",
     zig_toolchains = "toolchains",
 )
 
-zig_toolchains()
+zig_toolchains(
+    macos_sdks = [
+        macos_sdk(
+          version = "13.1",
+          urls = [ "https://dl.jakstys.lt/ntpad/x/MacOSX13.1.sdk.tar.zst" ],
+          sha256 = "9b65f80a142dfb0b7d295636ad8b8f9b9b3450957f6d101f1076836463e729a9",
+        )
+    ],
+)
 
 register_toolchains(
     # if no `--platform` is specified, these toolchains will be used for
     # (linux,darwin,windows)x(amd64,arm64)
     "@zig_sdk//toolchain:linux_amd64_gnu.2.19",
     "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
-    "@zig_sdk//toolchain:darwin_amd64",
-    "@zig_sdk//toolchain:darwin_arm64",
+    "@zig_sdk//toolchain:darwin_amd64_sdk.13.1",
+    "@zig_sdk//toolchain:darwin_arm64_sdk.13.1",
     "@zig_sdk//toolchain:windows_amd64",
     "@zig_sdk//toolchain:windows_arm64",
 
@@ -67,6 +76,9 @@ register_toolchains(
     # arm64 toolchains for libc-aware platforms:
     "@zig_sdk//libc_aware/toolchain:linux_arm64_gnu.2.28",
     "@zig_sdk//libc_aware/toolchain:linux_arm64_musl",
+
+    "@zig_sdk//libc_aware/toolchain:darwin_amd64_sdk.13.1",
+    "@zig_sdk//libc_aware/toolchain:darwin_arm64_sdk.13.1",
 )
 
 http_archive(

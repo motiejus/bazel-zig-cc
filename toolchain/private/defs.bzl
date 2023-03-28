@@ -36,36 +36,41 @@ def zig_tool_path(os):
     else:
         return _ZIG_TOOL_PATH
 
-def target_structs():
+def target_structs(macos_sdk_versions):
     ret = []
     for zigcpu, gocpu in (("x86_64", "amd64"), ("aarch64", "arm64")):
-        ret.append(_target_macos(gocpu, zigcpu))
         ret.append(_target_windows(gocpu, zigcpu))
         ret.append(_target_linux_musl(gocpu, zigcpu))
         for glibc in _GLIBCS:
             ret.append(_target_linux_gnu(gocpu, zigcpu, glibc))
+        for macos_sdk_version in macos_sdk_versions:
+            ret.append(_target_macos(gocpu, zigcpu, macos_sdk_version))
     return ret
 
-def _target_macos(gocpu, zigcpu):
-    min_os = "11"
-    copts = []
+def _target_macos(gocpu, zigcpu, macos_sdk_version):
+    macos_sdk_opts = [
+        "--sysroot",
+        "external/macos_sdk_{}".format(macos_sdk_version),
+        "-F",
+        "/System/Library/Frameworks",
+    ]
+
+    copts = macos_sdk_opts
 
     if zigcpu == "aarch64":
-        copts = ["-mcpu=apple_m1"]
+        copts.append("-mcpu=apple_m1")
 
     return struct(
-        gotarget = "darwin_{}".format(gocpu),
-        zigtarget = "{}-macos-none".format(zigcpu),
-        includes = [
-            "libunwind/include",
-            # TODO: Define a toolchain for each minimum OS version
-            "libc/include/{}-macos.{}-none".format(zigcpu, min_os),
-            "libc/include/any-macos.{}-any".format(min_os),
-            "libc/include/any-macos-any",
-        ] + _INCLUDE_TAIL,
+        gotarget = "darwin_{}_sdk.{}".format(gocpu, macos_sdk_version),
+        zigtarget = "{}-macos-sdk.{}".format(zigcpu, macos_sdk_version),
+        includes = [],
+        linkopts = macos_sdk_opts,
         dynamic_library_linkopts = ["-Wl,-undefined=dynamic_lookup"],
+        cxx_builtin_include_directories = ["external/macos_sdk_{}/usr/include".format(macos_sdk_version)],
+        sdk_include_files = ["@macos_sdk_{}//:usr_include".format(macos_sdk_version)],
+        sdk_lib_files = ["@macos_sdk_{}//:usr_lib".format(macos_sdk_version)],
         copts = copts,
-        libc = "darwin",
+        libc = "macos",
         bazel_target_cpu = "darwin",
         constraint_values = [
             "@platforms//os:macos",
@@ -79,6 +84,7 @@ def _target_macos(gocpu, zigcpu):
                 "extension": ".dylib",
             },
         ],
+        libc_constraint = "@zig_sdk//libc:macos.{}".format(macos_sdk_version),
     )
 
 def _target_windows(gocpu, zigcpu):
@@ -90,6 +96,7 @@ def _target_windows(gocpu, zigcpu):
             "libunwind/include",
             "libc/include/any-windows-any",
         ] + _INCLUDE_TAIL,
+        linkopts = [],
         dynamic_library_linkopts = [],
         copts = [],
         libc = "mingw",
@@ -145,6 +152,7 @@ def _target_linux_gnu(gocpu, zigcpu, glibc_version):
         ] + _INCLUDE_TAIL,
         compiler_extra_includes = compiler_extra_includes,
         linker_version_scripts = linker_version_scripts,
+        linkopts = [],
         dynamic_library_linkopts = [],
         copts = [],
         libc = "glibc",
@@ -171,6 +179,7 @@ def _target_linux_musl(gocpu, zigcpu):
                    (["libc/include/{}-linux-any".format(zigcpu)] if zigcpu != "x86_64" else []) + [
             "libc/include/any-linux-any",
         ] + _INCLUDE_TAIL,
+        linkopts = [],
         dynamic_library_linkopts = [],
         copts = ["-D_LIBCPP_HAS_MUSL_LIBC", "-D_LIBCPP_HAS_THREAD_API_PTHREAD"],
         libc = "musl",
